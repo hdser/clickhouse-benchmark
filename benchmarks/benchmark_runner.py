@@ -179,8 +179,8 @@ class BenchmarkRunner(ABC):
         detailed_results = results["detailed_results"]
         
         # Print header
-        print("\n" + "=" * 120)
-        print(f"{'Query Name':<25} | {'Avg Time (s)':<12} | {'Memory':<12} | {'Rows Read':<12} | {'Data Read':<12} | {'Rows Written':<12} | {'Description':<30}")
+        print("\n" + "=" * 140)
+        print(f"{'Query Name':<35} | {'Avg Time (s)':<12} | {'Memory':<12} | {'Rows Read':<12} | {'Data Read':<12} | {'Rows Written':<12} | {'Description':<30}")
         print("-" * 120)
         
         # Print rows
@@ -193,14 +193,14 @@ class BenchmarkRunner(ABC):
             avg_written_rows = f"{item['avg_written_rows']:,.0f}"
             desc = item["description"][:30]
             
-            print(f"{name[:25]:<25} | {avg_time:<12} | {avg_mem:<12} | {avg_rows_read:<12} | {avg_bytes_read:<12} | {avg_written_rows:<12} | {desc:<30}")
+            print(f"{name[:35]:<35} | {avg_time:<12} | {avg_mem:<12} | {avg_rows_read:<12} | {avg_bytes_read:<12} | {avg_written_rows:<12} | {desc:<30}")
         
-        print("=" * 120 + "\n")
+        print("=" * 140 + "\n")
         
         # Print expanded metrics table
-        print("\nEXPANDED METRICS\n" + "=" * 120)
-        print(f"{'Query Name':<25} | {'Data Written':<12} | {'Result Rows':<12} | {'Result Bytes':<12} | {'Runs':<5}")
-        print("-" * 120)
+        print("\nEXPANDED METRICS\n" + "=" * 140)
+        print(f"{'Query Name':<35} | {'Data Written':<12} | {'Result Rows':<12} | {'Result Bytes':<12} | {'Runs':<5}")
+        print("-" * 140)
         
         # Print rows
         for item in summary:
@@ -210,7 +210,7 @@ class BenchmarkRunner(ABC):
             avg_result_bytes = self._format_bytes(item['avg_result_bytes'])
             runs = item["runs"]
             
-            print(f"{name[:25]:<25} | {avg_written_bytes:<12} | {avg_result_rows:<12} | {avg_result_bytes:<12} | {runs:<5}")
+            print(f"{name[:35]:<35} | {avg_written_bytes:<12} | {avg_result_rows:<12} | {avg_result_bytes:<12} | {runs:<5}")
         
         print("=" * 120 + "\n")
         

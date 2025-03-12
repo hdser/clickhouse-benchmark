@@ -23,9 +23,19 @@ class NebulaBenchmarks(BenchmarkQueryCollection):
         return [
             # Crawls table benchmarks
             {
-                "name": "crawls_full_table_scan",
+                "name": "crawls_table_scan_full",
                 "description": "Full table scan of the crawls table",
                 "query": "SELECT * FROM nebula.crawls"
+            },
+            {
+                "name": "crawls_table_scan_last_day",
+                "description": "Last day table scan of the crawls table",
+                "query": "SELECT * FROM nebula.crawls WHERE created_at >= today() - INTERVAL 1 DAY"
+            },
+            {
+                "name": "crawls_table_scan_last_3days",
+                "description": "Last 3 days table scan of the crawls table",
+                "query": "SELECT * FROM nebula.crawls WHERE created_at >= today() - INTERVAL 3 DAY"
             },
             {
                 "name": "crawls_count",
@@ -58,15 +68,82 @@ class NebulaBenchmarks(BenchmarkQueryCollection):
             
             # Visits table benchmarks
             {
-                "name": "visits_full_table_scan",
+                "name": "visits_table_scan_full",
                 "description": "Full table scan of the visits table",
-                "query": "SELECT * FROM nebula.visits LIMIT 10000"
+                "query": "SELECT * FROM nebula.visits"
             },
             {
-                "name": "visits_count",
+                "name": "visits_table_scan_last_day_start",
+                "description": "Last day table scan of the visits table, by visit_started_at",
+                "query": """
+                    SELECT * FROM nebula.visits 
+                    WHERE visit_started_at >= today() - INTERVAL 1 DAY 
+                    """
+            },
+            {
+                "name": "visits_table_scan_last_3days_start",
+                "description": "Last 3 days table scan of the visits table, by visit_started_at",
+                "query": """
+                    SELECT * FROM nebula.visits 
+                    WHERE visit_started_at >= today() - INTERVAL 3 DAY 
+                    """
+            },
+            {
+                "name": "visits_table_scan_last_day_end",
+                "description": "Last day table scan of the visits table, by visit_ended_at",
+                "query": """
+                    SELECT * FROM nebula.visits 
+                    WHERE visit_ended_at >= today() - INTERVAL 1 DAY 
+                    """
+            },
+            {
+                "name": "visits_table_scan_last_3days_end",
+                "description": "Last 3 days table scan of the visits table, by visit_ended_at",
+                "query": """
+                    SELECT * FROM nebula.visits 
+                    WHERE visit_ended_at >= today() - INTERVAL 3 DAY 
+                    """
+            },
+            {
+                "name": "visits_count_full",
                 "description": "Count of rows in visits table",
                 "query": "SELECT COUNT(*) FROM nebula.visits"
             },
+
+            {
+                "name": "visits_count_last_day_start",
+                "description": "Last day Count of rows visits table, by visit_started_at",
+                "query": """
+                    SELECT COUNT(*) FROM nebula.visits 
+                    WHERE visit_started_at >= today() - INTERVAL 1 DAY 
+                    """
+            },
+            {
+                "name": "visits_count_last_3days_start",
+                "description": "Last 3 days Count of rows visits table, by visit_started_at",
+                "query": """
+                    SELECT COUNT(*) FROM nebula.visits 
+                    WHERE visit_started_at >= today() - INTERVAL 3 DAY 
+                    """
+            },
+            {
+                "name": "visits_count_last_day_end",
+                "description": "Last day Count of rows visits table, by visit_ended_at",
+                "query": """
+                    SELECT COUNT(*) FROM nebula.visits 
+                    WHERE visit_ended_at >= today() - INTERVAL 1 DAY 
+                    """
+            },
+            {
+                "name": "visits_count_last_3days_end",
+                "description": "Last 3 days Count of rows visits table, by visit_ended_at",
+                "query": """
+                    SELECT COUNT(*) FROM nebula.visits 
+                    WHERE visit_ended_at >= today() - INTERVAL 3 DAY 
+                    """
+            },
+            
+
             {
                 "name": "visits_filter_by_crawl_id",
                 "description": "Filter visits by crawl_id",
@@ -137,28 +214,29 @@ class NebulaBenchmarks(BenchmarkQueryCollection):
                 LIMIT 10000
                 """
             },
-            
+             
             # Cross-table queries
-            {
-                "name": "complex_multi_table_query",
-                "description": "Complex query across multiple tables",
-                "query": """
-                SELECT 
-                    c.id as crawl_id,
-                    c.created_at as crawl_date,
-                    COUNT(DISTINCT v.peer_id) as unique_peers,
-                    COUNT(DISTINCT n.neighbor_discovery_id_prefix) as total_neighbors
-                FROM nebula.crawls c
-                LEFT JOIN nebula.visits v ON c.id = v.crawl_id
-                LEFT JOIN nebula.neighbors n ON c.id = n.crawl_id
-                WHERE 
-                    c.state = 'succeeded' AND
-                    c.created_at >= NOW() - INTERVAL 30 DAY
-                GROUP BY c.id, c.created_at
-                ORDER BY c.created_at DESC
-                LIMIT 10000
-                """
-            },
+        #    {
+        #        "name": "complex_multi_table_query",
+        #        "description": "Complex query across multiple tables",
+        #        "query": """
+        #        SELECT 
+        #            c.id as crawl_id,
+        #            c.created_at as crawl_date,
+        #            COUNT(DISTINCT v.peer_id) as unique_peers,
+        #            COUNT(DISTINCT n.neighbor_discovery_id_prefix) as total_neighbors
+        #        FROM nebula.crawls c
+        #        LEFT JOIN nebula.visits v ON c.id = v.crawl_id
+        #        LEFT JOIN nebula.neighbors n ON c.id = n.crawl_id
+        #        WHERE 
+        #            c.state = 'succeeded' AND
+        #            c.created_at >= NOW() - INTERVAL 30 DAY
+        #        GROUP BY c.id, c.created_at
+        #        ORDER BY c.created_at DESC
+        #        LIMIT 10000
+        #        """
+        #    },
+        
             {
                 "name": "peer_connectivity_analysis",
                 "description": "Analyze peer connectivity",
