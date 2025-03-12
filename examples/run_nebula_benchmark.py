@@ -5,6 +5,7 @@ Example script to run the Nebula benchmark.
 import os
 import argparse
 import logging
+import json
 from dotenv import load_dotenv
 
 from benchmarks import ClickHouseBenchmark
@@ -16,6 +17,22 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger('nebula_benchmark')
+
+
+def parse_memory_limits(memory_limits_file):
+    """Parse a memory limits JSON file or string."""
+    if not memory_limits_file:
+        return {}
+        
+    if os.path.exists(memory_limits_file):
+        with open(memory_limits_file, 'r') as f:
+            return json.load(f)
+    else:
+        try:
+            return json.loads(memory_limits_file)
+        except json.JSONDecodeError:
+            logger.error(f"Invalid JSON format for memory limits: {memory_limits_file}")
+            return {}
 
 
 def main():
@@ -35,6 +52,9 @@ def main():
     parser.add_argument('--runs', type=int, default=3, help='Number of runs per benchmark')
     parser.add_argument('--env-file', default='.env', help='Path to environment file')
     parser.add_argument('--table-info', action='store_true', help='Show table information before running benchmarks')
+    parser.add_argument('--memory-limits', help='JSON file or string with memory limits for specific benchmarks')
+    parser.add_argument('--skip-benchmarks', help='Comma-separated list of benchmark names to skip')
+    parser.add_argument('--retry-failed', help='JSON file with previous results to retry only failed benchmarks')
     
     args = parser.parse_args()
     
@@ -90,6 +110,34 @@ def main():
                     print(f"  ... and {len(info['columns']) - 5} more columns")
         print("\n=============================\n")
     
+    # Parse memory limits if provided
+    memory_limits = parse_memory_limits(args.memory_limits) if args.memory_limits else {}
+    
+    # Parse skip benchmarks
+    skip_benchmarks = []
+    if args.skip_benchmarks:
+        skip_benchmarks = [name.strip() for name in args.skip_benchmarks.split(',')]
+        
+    # Handle retry failed benchmarks if a previous result file is provided
+    if args.retry_failed and os.path.exists(args.retry_failed):
+        try:
+            with open(args.retry_failed, 'r') as f:
+                previous_results = json.load(f)
+                
+            # Find which benchmarks failed
+            failed_benchmarks = []
+            for name, results in previous_results.get("detailed_results", {}).items():
+                if any("error" in result.get("additional_metrics", {}) for result in results):
+                    failed_benchmarks.append(name)
+                    
+            if failed_benchmarks:
+                logger.info(f"Retrying previously failed benchmarks: {', '.join(failed_benchmarks)}")
+                # Add these to the skip list (we'll invert it below)
+                skip_benchmarks.extend([name for name in previous_results.get("detailed_results", {}).keys() 
+                                      if name not in failed_benchmarks])
+        except Exception as e:
+            logger.error(f"Failed to process retry file: {e}")
+    
     # Add benchmark queries
     nebula_benchmarks = NebulaBenchmarks()
     benchmark.add_benchmarks_from_list(nebula_benchmarks.get_queries())
@@ -100,14 +148,31 @@ def main():
             bm.run_count = args.runs
     
     # Run benchmarks
-    results = benchmark.run_all_benchmarks()
+    results = benchmark.run_all_benchmarks(memory_limits=memory_limits, skip_benchmarks=skip_benchmarks)
     
     # Save and print results
     benchmark.save_results_to_file(results, args.output)
     benchmark.print_summary_table(results)
     
     logger.info(f"Benchmark results saved to {args.output}")
-    return 0
+    
+    # Check if any benchmarks failed, use as exit code
+    failed = False
+    for benchmark_summary in results.get("benchmark_summary", []):
+        if benchmark_summary.get("error_count", 0) > 0:
+            failed = True
+            break
+    
+    for benchmark_name, benchmark_results in results.get("detailed_results", {}).items():
+        for result in benchmark_results:
+            if "additional_metrics" in result and "error" in result["additional_metrics"]:
+                failed = True
+                break
+        if failed:
+            break
+    
+    logger.info("All benchmarks completed successfully" if not failed else "Some benchmarks failed")
+    return 1 if failed else 0
 
 
 if __name__ == "__main__":

@@ -35,7 +35,7 @@ class NebulaBenchmarks(BenchmarkQueryCollection):
             {
                 "name": "crawls_filter_by_state",
                 "description": "Filter crawls by state",
-                "query": "SELECT * FROM nebula.crawls WHERE state = 'succeeded'"
+                "query": "SELECT * FROM crawls WHERE state = 'succeeded'"
             },
             {
                 "name": "crawls_recent_stats",
@@ -74,7 +74,7 @@ class NebulaBenchmarks(BenchmarkQueryCollection):
                 SELECT * 
                 FROM nebula.visits 
                 WHERE crawl_id = (SELECT id FROM crawls ORDER BY created_at DESC LIMIT 1)
-                LIMIT 1000
+                LIMIT 10000
                 """
             },
             {
@@ -92,7 +92,7 @@ class NebulaBenchmarks(BenchmarkQueryCollection):
                     visit_started_at >= NOW() - INTERVAL 1 DAY AND
                     length(dial_errors) = 0
                 ORDER BY visit_started_at DESC
-                LIMIT 1000
+                LIMIT 10000
                 """
             },
             {
@@ -108,7 +108,7 @@ class NebulaBenchmarks(BenchmarkQueryCollection):
                     visit_started_at >= NOW() - INTERVAL 7 DAY AND
                     toString(peer_properties) LIKE '%ip%'
                 ORDER BY visit_started_at DESC
-                LIMIT 1000
+                LIMIT 10000
                 """
             },
             
@@ -134,7 +134,7 @@ class NebulaBenchmarks(BenchmarkQueryCollection):
                 FROM nebula.neighbors n
                 JOIN nebula.discovery_id_prefixes_x_peer_ids dp ON n.peer_discovery_id_prefix = dp.discovery_id_prefix
                 JOIN nebula.discovery_id_prefixes_x_peer_ids dn ON n.neighbor_discovery_id_prefix = dn.discovery_id_prefix
-                LIMIT 1000
+                LIMIT 10000
                 """
             },
             
@@ -156,7 +156,7 @@ class NebulaBenchmarks(BenchmarkQueryCollection):
                     c.created_at >= NOW() - INTERVAL 30 DAY
                 GROUP BY c.id, c.created_at
                 ORDER BY c.created_at DESC
-                LIMIT 100
+                LIMIT 10000
                 """
             },
             {
